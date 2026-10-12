@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Big Wind Blows</title>
+<style>
+  :root {
+    --bg1: #fdf3e1;
+    --bg2: #f6d9a8;
+    --ink: #4a2c17;
+    --orange: #d9772b;
+    --red: #b5442e;
+    --gold: #b08a1f;
+    --green: #6b7d33;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: Georgia, "Times New Roman", "Microsoft JhengHei", "PingFang TC", serif;
+    color: var(--ink);
+    background: radial-gradient(ellipse at 30% 20%, var(--bg1), var(--bg2));
+    overflow: hidden;
+    user-select: none;
+  }
+
+  header {
+    position: fixed; top: 4vh; left: 0; right: 0; z-index: 25; pointer-events: none;
+    text-align: center; padding: 0 5vw;
+  }
+  header .big { font-size: clamp(30px, 5vw, 72px); font-weight: bold; letter-spacing: .02em; }
+  header .sub { margin-top: .4em; font-size: clamp(16px, 2.2vw, 30px); font-style: italic; opacity: .8; }
+
+  main {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    gap: 3vw; padding: 20vh 4vw 18vh; flex-wrap: wrap;
+  }
+  .cat {
+    font: inherit; font-weight: bold; color: #fff; cursor: pointer;
+    width: clamp(220px, 26vw, 400px); aspect-ratio: 1 / 1.05;
+    font-size: clamp(28px, 3.4vw, 52px);
+    border: none; border-radius: 6% 50% 6% 50%;
+    box-shadow: 0 .6em 1.2em rgba(74,44,23,.28), inset 0 0 0 .12em rgba(255,255,255,.28);
+    transition: transform .2s, box-shadow .2s;
+    text-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+  .cat:hover { transform: translateY(-.25em) rotate(-2deg) scale(1.04); box-shadow: 0 1em 1.6em rgba(74,44,23,.32), inset 0 0 0 .12em rgba(255,255,255,.4); }
+  .cat:active { transform: scale(.97); }
+  .cat.life  { background: linear-gradient(135deg, #f0a040, var(--orange)); }
+  .cat.after { background: linear-gradient(135deg, #d9644a, var(--red)); }
+  .cat.day   { background: linear-gradient(135deg, #cfae3c, var(--gold)); }
+
+  .corner {
+    position: fixed; bottom: 3vh; font: inherit; font-weight: bold; cursor: pointer;
+    font-size: clamp(16px, 1.8vw, 26px); padding: .7em 1.4em;
+    color: var(--ink); background: rgba(255,255,255,.7);
+    border: .13em solid var(--ink); border-radius: 999px;
+    transition: transform .15s, background .15s;
+  }
+  .corner:hover { background: #fff; transform: scale(1.06); }
+  #btn-start { left: 3vw; }
+  #btn-last  { right: 3vw; }
+
+  #reset {
+    position: fixed; top: 2vh; left: 2vw; z-index: 30; font: inherit; cursor: pointer;
+    font-size: clamp(14px, 1.5vw, 22px); padding: .5em 1.1em;
+    color: var(--ink); background: rgba(255,255,255,.7);
+    border: .1em solid var(--ink); border-radius: 999px;
+  }
+  #reset:hover { background: #fff; }
+  #toast {
+    position: fixed; top: 9vh; left: 2vw; z-index: 30; padding: .5em 1em; border-radius: 8px;
+    background: var(--ink); color: #fff; font-size: clamp(14px, 1.4vw, 20px);
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #toast.on { opacity: 1; }
+  #mute {
+    position: fixed; top: 2vh; right: 2vw; font-size: 28px; cursor: pointer;
+    background: rgba(255,255,255,.6); border: none; border-radius: 50%;
+    width: 48px; height: 48px; z-index: 30;
+  }
+
+  /* stage */
+  #stage {
+    position: fixed; inset: 0; z-index: 20; display: none;
+    background: rgba(253,243,225,.97); opacity: 0; transition: opacity .35s;
+    overflow: hidden;
+  }
+  #stage.on { display: block; }
+  #stage.show { opacity: 1; }
+  .leaf { position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform; }
+
+  #card {
+    position: absolute; left: 50%; top: 50%;
+    width: min(88vw, 1000px); height: min(64vh, 560px);
+    margin-left: calc(min(88vw, 1000px) / -2); margin-top: calc(min(64vh, 560px) / -2);
+    border-radius: 5% 42% 5% 42%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 5% 12%;
+    box-shadow: 0 1.2em 2.4em rgba(74,44,23,.35), inset 0 0 0 .15em rgba(255,255,255,.3);
+    color: #fff; opacity: 0; transform-origin: center;
+    text-shadow: 0 2px 5px rgba(0,0,0,.28);
+  }
+  #card .tag { font-size: clamp(14px, 1.6vw, 24px); letter-spacing: .25em; text-transform: uppercase; opacity: .9; margin-bottom: 1em; }
+  #card .lead { font-size: clamp(14px, 1.7vw, 26px); font-style: italic; opacity: .92; margin-bottom: .5em; }
+  #card .en { font-weight: bold; line-height: 1.25; font-size: clamp(30px, 4.6vw, 70px); }
+  #card .en.long { font-size: clamp(24px, 3.5vw, 54px); }
+  #card .zh { margin-top: 1em; font-size: clamp(16px, 1.9vw, 28px); opacity: .92; }
+  #card .txt { opacity: 0; transition: opacity .6s; }
+  #card.read .txt { opacity: 1; }
+
+  #actions {
+    position: absolute; bottom: 4vh; left: 0; right: 0; display: flex; gap: 2vw; justify-content: center;
+    opacity: 0; transition: opacity .5s; pointer-events: none;
+  }
+  #actions.on { opacity: 1; pointer-events: auto; }
+  #actions button {
+    font: inherit; font-weight: bold; cursor: pointer; font-size: clamp(16px, 1.8vw, 26px);
+    padding: .7em 1.6em; color: var(--ink); background: #fff; border: .13em solid var(--ink); border-radius: 999px;
+  }
+  #actions button:hover { transform: scale(1.06); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="big">Big wind blows!</div>
+  <div class="sub">Blows on what? It blows on everyone who…</div>
+</header>
+
+<main>
+  <button class="cat life"  data-cat="life">Life Story</button>
+  <button class="cat after" data-cat="after">After Hours</button>
+  <button class="cat day"   data-cat="day">Day Job</button>
+</main>
+
+<button class="corner" id="btn-start" data-cat="start">Starts Here!</button>
+<button class="corner" id="btn-last"  data-cat="last">Last but Not Least</button>
+<button id="reset" title="Make all questions available again">↻ Reset questions</button>
+<div id="toast">All questions are available again</div>
+<button id="mute"title="Sound on/off" aria-label="Sound on/off">🔊</button>
+
+<div id="stage">
+  <div id="card">
+    <div class="txt">
+      <div class="en"></div>
+      <div class="zh"></div>
+    </div>
+  </div>
+  <div id="actions">
+    <button id="again">Another leaf</button>
+    <button id="back">Back</button>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  start: { label: "Starts Here!", color: ["#f0a040", "#d9772b"], items: [
+    ["…had coffee or tea this morning.", "今天早上喝過咖啡或茶的人"],
+  ]},
+  life: { label: "Life Story", color: ["#f0a040", "#d9772b"], items: [
+    ["…has a pet.", "家裡有養寵物的人"],
+    ["…is already a parent.", "已經當爸媽的人"],
+    ["…speaks three or more languages.", "會說三種以上語言的人"],
+    ["…has lived in a country other than your birth country for more than six months.", "有在非自己出生國家生活過半年以上的人"],
+    ["…is the eldest child in your family.", "是家中老大的人"],
+    ["…enjoys single life more than being in a relationship.", "比起有另一半的陪伴 更享受單身生活的人"],
+  ]},
+  after: { label: "After Hours", color: ["#d9644a", "#b5442e"], items: [
+    ["…prefers spending time alone over socializing.", "喜歡獨處勝過社交的人"],
+    ["…usually goes to bed after midnight 12:00.", "睡覺時間平均超過晚上12:00的人"],
+    ["…exercises at least once a week.", "每週至少運動一次的人"],
+    ["…cooks at least once a week.", "每週至少會下廚一次的人"],
+    ["…plays a musical instrument.", "會演奏樂器的人"],
+    ["…can handle medium spicy food.", "能吃中辣以上的人"],
+    ["…likes to have a fully planned itinerary before traveling.", "旅行前喜歡把行程排得很完整的人"],
+  ]},
+  day: { label: "Day Job", color: ["#cfae3c", "#b08a1f"], items: [
+    ["…has worked in a field outside of HR.", "有做過非HR領域工作的人"],
+    ["…has a plant on their desk, and it’s still alive.", "辦公桌上有植物，而且還活著的人"],
+    ["…has mispronounced a colleague’s name, or had their own name mispronounced.", "曾經把同事的名字念錯，或自己的名字被別人念錯過"],
+    ["…has joined a video meeting in a formal top and pajama pants.", "曾經在視訊會議中，只有上半身正裝、下半身是睡褲的人"],
+    ["…has had a pet or family member walk into the camera during a video meeting.", "視訊會議時，寵物或家人曾經闖進鏡頭的人"],
+    ["…has used AI tools for HR work this year.", "今年已經用 AI 工具處理過 HR 工作的人"],
+  ]},
+  last: { label: "Last but Not Least", color: ["#7f9a3c", "#5a6e25"], items: [
+    ["…believes that the work of HR can make an impact on others.", "相信 HR 的工作能影響別人的人"],
+  ]},
+};
+
+/* ---------- no-repeat draw ---------- */
+const bags = {};
+function draw(cat) {
+  const items = DATA[cat].items;
+  if (!bags[cat] || !bags[cat].length) {
+    const last = bags[cat + "_last"];
+    let b = items.map((_, i) => i);
+    for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+    if (b.length > 1 && b[b.length - 1] === last) b.unshift(b.pop()); // avoid immediate repeat across reshuffle
+    bags[cat] = b;
+  }
+  const idx = bags[cat].pop();
+  bags[cat + "_last"] = idx;
+  return items[idx];
+}
+
+/* ---------- wind sound (synthesised) ---------- */
+let actx = null, muted = false;
+const muteBtn = document.getElementById("mute");
+muteBtn.onclick = () => { muted = !muted; muteBtn.textContent = muted ? "🔇" : "🔊"; };
+
+function windSound(dur) {
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    const len = actx.sampleRate * 2;
+    const buf = actx.createBuffer(1, len, actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
+    const t = actx.currentTime;
+    bp.frequency.setValueAtTime(300, t);
+    bp.frequency.linearRampToValueAtTime(950, t + dur * 0.45);
+    bp.frequency.linearRampToValueAtTime(350, t + dur);
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.8;
+    const lfoGain = actx.createGain(); lfoGain.gain.value = 180;
+    lfo.connect(lfoGain); lfoGain.connect(bp.frequency);
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.5, t + 0.9);
+    g.gain.setValueAtTime(0.5, t + dur - 1.1);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(actx.destination);
+    src.start(t); lfo.start(t); src.stop(t + dur + 0.1); lfo.stop(t + dur + 0.1);
+  } catch (e) { /* sound is optional */ }
+}
+
+/* ---------- leaf animation ---------- */
+const stage = document.getElementById("stage");
+const card = document.getElementById("card");
+const actions = document.getElementById("actions");
+const againBtn = document.getElementById("again");
+const COLORS = ["#d9772b", "#b5442e", "#c9a227", "#8c3b1f", "#e59a3a", "#a1522a", "#7f9a3c"];
+let busy = false, currentCat = null, timers = [];
+
+function leafSVG(color) {
+  return `<svg viewBox="0 0 100 130" width="100%" height="100%">
+    <path d="M50 4 C92 34 92 84 50 120 C8 84 8 34 50 4Z" fill="${color}"/>
+    <path d="M50 14 L50 128 M50 50 L72 34 M50 50 L28 34 M50 78 L74 60 M50 78 L26 60" stroke="rgba(255,255,255,.35)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+function blowLeaves() {
+  const W = innerWidth, H = innerHeight;
+  for (let i = 0; i < 55; i++) {
+    const el = document.createElement("div");
+    el.className = "leaf";
+    const size = rnd(40, 110);
+    el.style.width = size + "px"; el.style.height = size * 1.3 + "px";
+    el.innerHTML = leafSVG(COLORS[Math.floor(Math.random() * COLORS.length)]);
+    stage.appendChild(el);
+    const y0 = rnd(-0.1, 1.0) * H, drift = rnd(-0.25, 0.25) * H;
+    const steps = 7, kf = [];
+    let rot = rnd(0, 360);
+    for (let s = 0; s <= steps; s++) {
+      const p = s / steps;
+      const x = -150 + p * (W + 400);
+      const y = y0 + drift * p + Math.sin(p * Math.PI * rnd(2, 4)) * rnd(40, 140);
+      rot += rnd(120, 360);
+      kf.push({ transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${1 + Math.sin(p * 6) * .15})` });
+    }
+    const a = el.animate(kf, { duration: rnd(2400, 4200), delay: rnd(0, 1500), easing: "ease-in-out", fill: "both" });
+    a.onfinish = () => el.remove();
+  }
+}
+
+function setCard(cat, pair) {
+  const [en, zh] = pair, c = DATA[cat].color;
+  card.style.background = `linear-gradient(135deg, ${c[0]}, ${c[1]})`;
+  const enEl = card.querySelector(".en");
+  enEl.textContent = en;
+  enEl.classList.toggle("long", en.length > 55);
+  card.querySelector(".zh").textContent = zh;
+}
+
+function play(cat) {
+  if (busy) return;
+  busy = true; currentCat = cat;
+  const pair = draw(cat);
+  card.classList.remove("read");
+  actions.classList.remove("on");
+  card.style.opacity = 0;
+  setCard(cat, pair);
+  againBtn.style.display = DATA[cat].items.length > 1 ? "" : "none";
+
+  stage.classList.add("on");
+  requestAnimationFrame(() => stage.classList.add("show"));
+  windSound(4.6);
+  blowLeaves();
+
+  timers.push(setTimeout(() => {
+    // the chosen leaf swirls in and settles in the centre
+    const fly = card.animate([
+      { opacity: 0, transform: "translate(-70vw, 25vh) rotate(-540deg) scale(.08)" },
+      { opacity: 1, transform: "translate(-25vw, -22vh) rotate(-300deg) scale(.3)", offset: .35 },
+      { opacity: 1, transform: "translate(18vw, 14vh) rotate(-120deg) scale(.6)", offset: .65 },
+      { opacity: 1, transform: "translate(0,0) rotate(0deg) scale(1)" },
+    ], { duration: 1900, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
+    fly.onfinish = () => {
+      card.style.opacity = 1; card.getAnimations().forEach(x => x.cancel());
+      card.classList.add("read");
+      actions.classList.add("on");
+      busy = false;
+    };
+  }, 2600));
+}
+
+function closeStage() {
+  if (busy) return;
+  timers.forEach(clearTimeout); timers = [];
+  stage.classList.remove("show");
+  actions.classList.remove("on");
+  setTimeout(() => {
+    stage.classList.remove("on");
+    stage.querySelectorAll(".leaf").forEach(l => l.remove());
+    card.style.opacity = 0; card.classList.remove("read");
+  }, 380);
+}
+
+document.querySelectorAll("[data-cat]").forEach(b => b.addEventListener("click", () => play(b.dataset.cat)));
+againBtn.onclick = () => { if (busy) return; stage.querySelectorAll(".leaf").forEach(l => l.remove()); card.style.opacity = 0; card.classList.remove("read"); actions.classList.remove("on"); playAgain(); };
+function playAgain() { const c = currentCat; busy = false; play(c); }
+document.getElementById("reset").onclick = () => {
+  for (const k in bags) delete bags[k];
+  const t = document.getElementById("toast");
+  t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 1800);
+};
+document.getElementById("back").onclick = closeStage;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeStage(); });
+</script>
+</body>
+</html>
