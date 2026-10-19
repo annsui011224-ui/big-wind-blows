@@ -59,7 +59,6 @@
     transition: transform .15s, background .15s;
   }
   .corner:hover { background: #fff; transform: scale(1.06); }
-  #btn-start { left: 3vw; }
   #btn-last  { right: 3vw; }
 
   #reset {
@@ -135,7 +134,6 @@
   <button class="cat day"   data-cat="day">Day Job</button>
 </main>
 
-<button class="corner" id="btn-start" data-cat="start">Starts Here!</button>
 <button class="corner" id="btn-last"  data-cat="last">Last but Not Least</button>
 <button id="reset" title="Make all questions available again">↻ Reset</button>
 <div id="toast">All questions are available again</div>
@@ -191,6 +189,7 @@ const DATA = {
 
 /* ---------- no-repeat draw ---------- */
 const bags = {};
+let firstDraw = true;
 function draw(cat) {
   const items = DATA[cat].items;
   if (!bags[cat] || !bags[cat].length) {
@@ -290,7 +289,9 @@ function setCard(cat, pair) {
 function play(cat) {
   if (busy) return;
   busy = true; currentCat = cat;
-  const pair = draw(cat);
+  let pair;
+  if (firstDraw && cat !== "last") { pair = DATA.start.items[0]; firstDraw = false; } // first leaf after load/reset is always the warm-up question
+  else pair = draw(cat);
   card.classList.remove("read");
   actions.classList.remove("on");
   card.style.opacity = 0;
@@ -336,6 +337,7 @@ againBtn.onclick = () => { if (busy) return; stage.querySelectorAll(".leaf").for
 function playAgain() { const c = currentCat; busy = false; play(c); }
 document.getElementById("reset").onclick = () => {
   for (const k in bags) delete bags[k];
+  firstDraw = true;
   const t = document.getElementById("toast");
   t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 1800);
 };
